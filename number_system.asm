@@ -75,7 +75,7 @@ BASE_TO_DECIMAL MACRO N,INTERFACE
     
     WHILE&INTERFACE:
     MOV AX,0
-    MOV AL,ARRAYINPUT[SI]
+    MOV AL,INPUT_ARRAY[SI]
     CMP AL,0
     JE BR&INTERFACE
     
@@ -83,7 +83,7 @@ BASE_TO_DECIMAL MACRO N,INTERFACE
     MOV BL,N    
     MULTIPLY BL,CX,INTERFACE
     MOV BX,0
-    MOV BL,ARRAYINPUT[SI]
+    MOV BL,INPUT_ARRAY[SI]
     
     MUL BL
     ADD DL,AL
@@ -168,7 +168,7 @@ INP DB 0  ; HELP TO TAKE DECIMAL INPUT
 
 DECIMALINPUT DB ?
 ARRAY DB 8 (?)
-ARRAYINPUT DB 0,0,0,0,0,1,0,1
+INPUT_ARRAY DB 8 (?)
 
 CHOICE DB "Please enter your choice: $"
 DECIMAL DB "1.Decimal$"
@@ -178,6 +178,10 @@ OCTAL DB "4.OCTAL$"
 
 INVATIDINPUT DW "You enter invalid input!!$"
 DIN DW "Enter a Decimal Value: $"
+BIN DW "Enter a Binary number(only 0 AND 1): $"
+HIN DW "Enter a HexaDecimal number(only 0 AND 9,A,B,C,D,E,F): $"
+OIN DW "Enter a Octal number(only 0 AND 7): $"
+
 DM DW "Decimal: $"
 BM DW "Binary: $"
 HM DW "Hexa Decimal: $"
@@ -251,6 +255,13 @@ MAIN PROC
     JMP _BREAK
     
     _BINARY:
+   
+    CALL NEWLINE
+    MSGPRINT BIN
+    CALL ZERO
+    CALL ZERO2
+    CALL BINARY_INPUT
+   
     
     BASE_TO_DECIMAL 2,B
     
@@ -278,11 +289,22 @@ MAIN PROC
     JMP _BREAK
     
     _HEXA:
+    CALL NEWLINE
+    MSGPRINT HIN
+    CALL ZERO
+    CALL ZERO2
+    CALL HEXA_INPUT
     BASE_TO_DECIMAL 16,H
     JMP _SHORT
     JMP _BREAK
     
     _OCTAL:
+    CALL NEWLINE
+    MSGPRINT OIN
+    CALL ZERO
+    CALL ZERO2
+    CALL OCTAL_INPUT
+    
     BASE_TO_DECIMAL 8,O
     JMP _SHORT
     JMP _BREAK
@@ -355,7 +377,188 @@ MULTIPLE_INPUT PROC
     MULTIPLE_INPUT ENDP
 
 
-ZERO PROC
+BINARY_INPUT PROC
+    MOV SI,0
+    
+    
+    BYNARY_LOOP:
+    CMP SI,8
+    JE END_LOOP_B
+    MOV AH,1
+    INT 21H
+    
+    CMP AL,13
+    JE END_LOOP_B
+    SUB AL,30H
+    CMP AL,1
+    JG BYNARY_LOOP
+    
+    MOV ARRAY[SI],AL    
+    INC SI
+    JMP BYNARY_LOOP
+    
+    
+    END_LOOP_B:
+    
+    MOV CX,0
+    MOV CX,SI 
+    
+    DEC SI
+    MOV DI,7
+    
+    COPY_B:
+    MOV AX,0
+    MOV AL,ARRAY[SI]
+    MOV INPUT_ARRAY[DI],AL
+    DEC SI
+    DEC DI
+    
+    LOOP COPY_B:
+    
+    MOV AX,0FFFFH
+    
+    
+   CMP DI,AX
+   JE RETN
+   MOV CX,0
+   MOV CX,DI
+   INC CL
+   
+   ZEROL:
+   MOV INPUT_ARRAY[DI],0
+   DEC DI
+   LOOP ZEROL:
+   
+   
+   RETN:    
+    RET
+    BINARY_INPUT ENDP
+
+HEXA_INPUT PROC
+    MOV SI,0
+    
+    
+    HEXA_LOOP:
+    CMP SI,2
+    JE END_LOOP_H
+    MOV AH,1
+    INT 21H
+    
+    CMP AL,13
+    JE END_LOOP_H
+    CMP AL,57
+    JG SUB37H
+    SUB AL,30H
+    JMP CONTI
+    SUB37H:
+    SUB AL,37H
+    
+    CONTI:
+    CMP AL,15
+    JG HEXA_LOOP
+    
+    MOV ARRAY[SI],AL    
+    INC SI
+    JMP HEXA_LOOP
+    
+    
+    END_LOOP_H:
+    
+    MOV CX,0
+    MOV CX,SI 
+    
+    DEC SI
+    MOV DI,7
+    
+    COPY_H:
+    MOV AX,0
+    MOV AL,ARRAY[SI]
+    MOV INPUT_ARRAY[DI],AL
+    DEC SI
+    DEC DI
+    
+    LOOP COPY_H:
+    
+    MOV AX,0FFFFH
+    
+    
+   CMP DI,AX
+   JE RETN_H
+   MOV CX,0
+   MOV CX,DI
+   INC CL
+   
+   ZEROL_H:
+   MOV INPUT_ARRAY[DI],0
+   DEC DI
+   LOOP ZEROL_H:
+   
+   
+   RETN_H:    
+    RET
+    HEXA_INPUT ENDP
+
+
+OCTAL_INPUT PROC
+    MOV SI,0
+    
+    
+    OCTAL_LOOP:
+    CMP SI,3
+    JE END_LOOP_O
+    MOV AH,1
+    INT 21H
+    
+    CMP AL,13
+    JE END_LOOP_O
+    SUB AL,30H
+    CMP AL,7
+    JG OCTAL_LOOP
+    
+    MOV ARRAY[SI],AL    
+    INC SI
+    JMP OCTAL_LOOP
+    
+    
+    END_LOOP_O:
+    
+    MOV CX,0
+    MOV CX,SI 
+    
+    DEC SI
+    MOV DI,7
+    
+    COPY_O:
+    MOV AX,0
+    MOV AL,ARRAY[SI]
+    MOV INPUT_ARRAY[DI],AL
+    DEC SI
+    DEC DI
+    
+    LOOP COPY_O:
+    
+    MOV AX,0FFFFH
+    
+    
+   CMP DI,AX
+   JE RETN_O
+   MOV CX,0
+   MOV CX,DI
+   INC CL
+   
+   ZEROL_O:
+   MOV INPUT_ARRAY[DI],0
+   DEC DI
+   LOOP ZEROL_O:
+   
+   
+   RETN_O:    
+    RET
+    OCTAL_INPUT ENDP
+    
+
+
+ZERO PROC        ;MAKE ZERO ARRAY
     MOV CX,0
     MOV CL,8
     MOV SI,0
@@ -365,11 +568,23 @@ ZERO PROC
     INC SI
     LOOP A:
     RET
-    ZERO ENDP
+    ZERO ENDP 
+
+ZERO2 PROC     ;MAKE ZERO ARRAYINPUT ARRAY
+    MOV CX,0
+    MOV CL,8
+    MOV SI,0
+    
+    ARRAYIN:
+    MOV INPUT_ARRAY[SI],0
+    INC SI
+    LOOP ARRAYIN:
+    RET
+    ZERO2 ENDP
 
 
 
 
 
 
-END MAIN
+END MAIN 
