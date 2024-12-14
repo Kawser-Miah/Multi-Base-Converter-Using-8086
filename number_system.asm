@@ -167,25 +167,26 @@ ARAYPRINT MACRO N,INTERFACE
 INP DB 0  ; HELP TO TAKE DECIMAL INPUT
 
 DECIMALINPUT DB ?
-ARRAY DB 8 (?)
-INPUT_ARRAY DB 8 (?)
 
-CHOICE DB "Please enter your choice: $"
+
+CHOICE DB "Please enter your choice(Enter 0 for exit): $"
 DECIMAL DB "1.Decimal$"
 BINARY DB "2.Binary$"
 HEXA DB "3.HexaDecimal$"
 OCTAL DB "4.OCTAL$"
 
 INVATIDINPUT DW "You enter invalid input!!$"
-DIN DW "Enter a Decimal Value: $"
+DIN DW "Enter a Decimal Value(Max 255): $"
 BIN DW "Enter a Binary number(only 0 AND 1): $"
-HIN DW "Enter a HexaDecimal number(only 0 AND 9,A,B,C,D,E,F): $"
-OIN DW "Enter a Octal number(only 0 AND 7): $"
+HIN DW "Enter a HexaDecimal number(only 0 TO 9,A,B,C,D,E,F): $"
+OIN DW "Enter a Octal number(only 0 TO 7 & Max 377): $"
 
 DM DW "Decimal: $"
 BM DW "Binary: $"
 HM DW "Hexa Decimal: $"
-OM DW "Octal: $"
+OM DW "Octal: $" 
+ARRAY DB 8 (?)
+INPUT_ARRAY DB 8 (?)
 
 SELECT DB ?
 
@@ -194,7 +195,7 @@ MAIN PROC
     MOV AX,@DATA
     MOV DS,AX   
           
-    
+    _RELOAD:
     MSGPRINT DECIMAL
     CALL NEWLINE
     MSGPRINT BINARY
@@ -207,6 +208,8 @@ MAIN PROC
         
     CALL SINGLE_INPUT
     MOV SELECT,AL
+    CMP AL,0
+    JE _EXIT
     CMP AL,1
     JE _DECIMAL
     JL _ERROR
@@ -227,7 +230,7 @@ MAIN PROC
     MOV DECIMALINPUT,AL
     
     
-    _SHORT:
+    _START:
     CALL NEWLINE
     CALL NEWLINE
     MSGPRINT DM
@@ -265,7 +268,7 @@ MAIN PROC
     
     BASE_TO_DECIMAL 2,B
     
-    JMP _SHORT
+    JMP _START
     ;CALL NEWLINE
    ; CALL NEWLINE
     ;MSGPRINT DM
@@ -295,7 +298,7 @@ MAIN PROC
     CALL ZERO2
     CALL HEXA_INPUT
     BASE_TO_DECIMAL 16,H
-    JMP _SHORT
+    JMP _START
     JMP _BREAK
     
     _OCTAL:
@@ -306,7 +309,7 @@ MAIN PROC
     CALL OCTAL_INPUT
     
     BASE_TO_DECIMAL 8,O
-    JMP _SHORT
+    JMP _START
     JMP _BREAK
     
     _ERROR:
@@ -314,6 +317,15 @@ MAIN PROC
     MSGPRINT INVATIDINPUT
     
     _BREAK:
+    CALL NEWLINE
+    CALL NEWLINE
+    
+    CALL ZERO
+    CALL ZERO2
+   JMP _RELOAD 
+   
+   _EXIT:
+    
     
    
     
@@ -349,11 +361,28 @@ MULTIPLE_INPUT PROC
     MOV BL,10
     MOV CX,0
     MOV SI,3
+    MOV AX,0
     
     MOV INP,0
     INPUT_LOOP:
     CMP SI,0
     JE  END_LOOP ;CHECK FOR OVERFLOW
+    
+    CMP SI,1
+    JG CONT_D
+    
+    MOV AH,0
+    MOV DX,10
+    DIV DL
+    
+    CMP AL,2
+    JG END_LOOP
+    
+    CMP AH,5
+    JG END_LOOP
+    
+    
+    CONT_D:
     MOV AH,01
     INT 21H
     
@@ -506,6 +535,14 @@ OCTAL_INPUT PROC
     OCTAL_LOOP:
     CMP SI,3
     JE END_LOOP_O
+    
+    CMP SI,2         ;CHECK POSITION OF INPUT
+    JL CONT        
+    
+    CMP ARRAY[0],3   ;MANAGE OVERFLOW
+    JG END_LOOP_O
+    
+    CONT:    
     MOV AH,1
     INT 21H
     
